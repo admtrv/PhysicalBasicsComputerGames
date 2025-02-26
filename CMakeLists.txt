@@ -8,4 +8,5 @@ find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 
 add_subdirectory(task1)
-
+add_subdirectory(task2)
+add_subdirectory(task3)

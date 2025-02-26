@@ -1,7 +1,9 @@
 /*
- * task1.cpp
+ * task3.cpp
  */
 
+#include <fstream>
+#include <iosfwd>
 #include <iostream>
 #include <GL/gl.h>
 #include <GL/glut.h>
@@ -10,35 +12,63 @@ const float l_max = 150.0f;         // maximum coordinate range for projection
 const float square_size = 20.0f;    // side length of square representing car
 const int time_step = 25;           // time step for glut timer
 const float dt = 0.025f;            // time increment for calculations
-float current_time = 0.0f;
-float s_distance = 200.0f;
 
-// first car
-float x1 = -(s_distance / 2.0f);
-float v1 = 15.0f;
+const std::string file_name = "data.txt";
 
-// second car
-float x2 = (s_distance / 2.0f);
-float v2 = -10.0f;
+const float scale_factor = 13.0f;
+
+// bus
+float current_t = 0.0f;
+float current_v = 0.0f;
+float current_x = -l_max;
+
+float s1 = 10.0f;
+float v1 = 70.0f;
+
+float t_stop = 60.0f / 3600.0f;
+
+float s2 = 12.0f;
+float v2 = 60.0f;
+
+const float t1 = s1 / v1;           // first stage
+const float t2 = t1 + t_stop;       // second stage
+const float t3 = t2 + (s2 / v2);    // third stage
 
 // update position of cars
 void updatePosition(int value)
 {
-    current_time += dt;
+    current_t += dt;
 
-    x1 += v1 * dt;
-    x2 += v2 * dt;
-
-    // check collision
-    if (x1 + (square_size/2.0f) >= x2 - (square_size/2.0f))
+    if (current_t < t1 * scale_factor)
     {
-        v1 = 0.0f;
-        v2 = 0.0f;
-
-        // print actual calculated collision time
-        std::cout << "Actual collision time: " << current_time << std::endl;
+        current_v = v1;
+    }
+    else if (current_t >= t1 * scale_factor && current_t < t2 * scale_factor)
+    {
+        current_v = 0.0f;
+    }
+    else if (current_t >= t2 * scale_factor && current_t < t3 * scale_factor)
+    {
+        current_v = v2;
+    }
+    else
+    {
+        float avg_speed = ((current_x + l_max) / (current_t));
+        std::cout << "Actual average speed: " << avg_speed << std::endl;
         std::exit(0);
     }
+
+    current_x += current_v * dt;
+
+    std::ofstream file(file_name, std::ios::app);
+
+    if (file.is_open()) {
+        file << current_t / scale_factor << " "
+            << (current_x + l_max) / scale_factor << " "
+            << current_v << "\n";
+    }
+
+    file.close();
 
     glutPostRedisplay();
     glutTimerFunc(time_step, updatePosition, 0);
@@ -76,17 +106,10 @@ void display()
 {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // draw first car
+    // draw bus
     glPushMatrix();
-        glTranslatef(x1, 0.0f, 0.0f);
+        glTranslatef(current_x, 0.0f, 0.0f);
         glColor3f(1.0f, 0.0f, 0.0f); // red
-        drawSquare();
-    glPopMatrix();
-
-    // draw second car
-    glPushMatrix();
-        glTranslatef(x2, 0.0f, 0.0f);
-        glColor3f(0.0f, 0.0f, 1.0f); // blue
         drawSquare();
     glPopMatrix();
 
@@ -95,9 +118,11 @@ void display()
 
 int main(int argc, char** argv)
 {
-    // print theoretically calculated collision time
-    float calculatedTime = (s_distance - square_size) / (v1 + (-v2));
-    std::cout << "Calculated collision time: " << calculatedTime << std::endl;
+    float calculated_avg_speed = (s1 + s2) / t3;
+    std::cout << "Calculated average speed: " << calculated_avg_speed << std::endl;
+
+    std::ofstream file(file_name, std::ios::trunc);
+    file.close();
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
@@ -106,7 +131,7 @@ int main(int argc, char** argv)
 
     glClearColor(0.0, 0.0, 0.0, 1.0);
 
-    glutCreateWindow("Collision Simulation");
+    glutCreateWindow("Average Speed Simulation");
 
     // set callback functions
     glutDisplayFunc(display);

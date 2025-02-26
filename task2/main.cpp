@@ -1,8 +1,9 @@
 /*
- * task1.cpp
+ * task2.cpp
  */
 
-#include <iostream>
+#include <fstream>
+#include <iosfwd>
 #include <GL/gl.h>
 #include <GL/glut.h>
 
@@ -10,16 +11,22 @@ const float l_max = 150.0f;         // maximum coordinate range for projection
 const float square_size = 20.0f;    // side length of square representing car
 const int time_step = 25;           // time step for glut timer
 const float dt = 0.025f;            // time increment for calculations
+
+const std::string file_name = "data.txt";
+
 float current_time = 0.0f;
-float s_distance = 200.0f;
 
 // first car
-float x1 = -(s_distance / 2.0f);
+float x1 = -l_max;
 float v1 = 15.0f;
 
 // second car
-float x2 = (s_distance / 2.0f);
-float v2 = -10.0f;
+float x2 = -l_max + 50;
+float v2 = 10.0f;
+
+// third car
+float x3 = l_max;
+float v3 = -20.0f;
 
 // update position of cars
 void updatePosition(int value)
@@ -28,17 +35,18 @@ void updatePosition(int value)
 
     x1 += v1 * dt;
     x2 += v2 * dt;
+    x3 += v3 * dt;
 
-    // check collision
-    if (x1 + (square_size/2.0f) >= x2 - (square_size/2.0f))
-    {
-        v1 = 0.0f;
-        v2 = 0.0f;
+    std::ofstream file(file_name, std::ios::app);
 
-        // print actual calculated collision time
-        std::cout << "Actual collision time: " << current_time << std::endl;
-        std::exit(0);
+    if (file.is_open()) {
+        file << current_time << " "
+            << x1 + l_max << " " << v1 << " "
+            << x2 + l_max << " " << v2 << " "
+            << x3 + l_max << " " << v3 << "\n";
     }
+
+    file.close();
 
     glutPostRedisplay();
     glutTimerFunc(time_step, updatePosition, 0);
@@ -78,7 +86,7 @@ void display()
 
     // draw first car
     glPushMatrix();
-        glTranslatef(x1, 0.0f, 0.0f);
+        glTranslatef(x1, square_size, 0.0f);
         glColor3f(1.0f, 0.0f, 0.0f); // red
         drawSquare();
     glPopMatrix();
@@ -86,8 +94,15 @@ void display()
     // draw second car
     glPushMatrix();
         glTranslatef(x2, 0.0f, 0.0f);
-        glColor3f(0.0f, 0.0f, 1.0f); // blue
+        glColor3f(0.0f, 1.0f, 0.0f); // green
         drawSquare();
+    glPopMatrix();
+
+    // draw third car
+    glPushMatrix();
+    glTranslatef(x3, -square_size, 0.0f);
+    glColor3f(0.0f, 0.0f, 1.0f); // blue
+    drawSquare();
     glPopMatrix();
 
     glutSwapBuffers();
@@ -95,9 +110,8 @@ void display()
 
 int main(int argc, char** argv)
 {
-    // print theoretically calculated collision time
-    float calculatedTime = (s_distance - square_size) / (v1 + (-v2));
-    std::cout << "Calculated collision time: " << calculatedTime << std::endl;
+    std::ofstream file(file_name, std::ios::trunc);
+    file.close();
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
@@ -106,7 +120,7 @@ int main(int argc, char** argv)
 
     glClearColor(0.0, 0.0, 0.0, 1.0);
 
-    glutCreateWindow("Collision Simulation");
+    glutCreateWindow("Graph's Data Collecting");
 
     // set callback functions
     glutDisplayFunc(display);
