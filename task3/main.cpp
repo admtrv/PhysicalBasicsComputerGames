@@ -9,7 +9,7 @@
 #include <GL/glut.h>
 
 const float l_max = 150.0f;         // maximum coordinate range for projection
-const float square_size = 20.0f;    // side length of square representing car
+const float face_size = 20.0f;    // side length of square representing car
 const int time_step = 25;           // time step for glut timer
 const float dt = 0.025f;            // time increment for calculations
 
@@ -94,10 +94,10 @@ void handleResize(int width, int height)
 void drawSquare()
 {
     glBegin(GL_QUADS);
-        glVertex2f(-(square_size/2.0f), -(square_size/2.0f));
-        glVertex2f( (square_size/2.0f), -(square_size/2.0f));
-        glVertex2f( (square_size/2.0f),  (square_size/2.0f));
-        glVertex2f(-(square_size/2.0f),  (square_size/2.0f));
+        glVertex2f(-(face_size/2.0f), -(face_size/2.0f));
+        glVertex2f( (face_size/2.0f), -(face_size/2.0f));
+        glVertex2f( (face_size/2.0f),  (face_size/2.0f));
+        glVertex2f(-(face_size/2.0f),  (face_size/2.0f));
     glEnd();
 }
 

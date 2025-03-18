@@ -11,7 +11,7 @@
 const float dt = 0.025f;
 const int   time_step = 25;
 const float L_view = 150.0f;
-const float square_size = 10.0f;
+const float face_size = 10.0f;
 
 const float g = 9.8f;
 const float h = 80.0f;
@@ -51,17 +51,17 @@ void updatePositions(int value)
     float y_1 = y1(current_time);
     float y_2 = y2(current_time);
 
-    if (y_1 <= square_size/2.0f)
+    if (y_1 <= face_size/2.0f)
     {
         std::cout << "Real landing time of first object: " << current_time << std::endl;
     }
 
-    if (y_2 <= square_size/2.0f)
+    if (y_2 <= face_size/2.0f)
     {
         std::cout << "Real landing time of second object: " << current_time << std::endl;
     }
 
-    if (y_1 <= square_size/2.0f && y_2 <= square_size/2.0f)
+    if (y_1 <= face_size/2.0f && y_2 <= face_size/2.0f)
     {
         exit(0);
     }
@@ -88,10 +88,10 @@ void handleResize(int w, int h)
 void drawSquare()
 {
     glBegin(GL_QUADS);
-        glVertex2f(-square_size/2.f, -square_size/2.f);
-        glVertex2f( square_size/2.f, -square_size/2.f);
-        glVertex2f( square_size/2.f,  square_size/2.f);
-        glVertex2f(-square_size/2.f,  square_size/2.f);
+        glVertex2f(-face_size/2.f, -face_size/2.f);
+        glVertex2f( face_size/2.f, -face_size/2.f);
+        glVertex2f( face_size/2.f,  face_size/2.f);
+        glVertex2f(-face_size/2.f,  face_size/2.f);
     glEnd();
 }
 
@@ -107,7 +107,7 @@ void display()
 
     glPushMatrix();
     {
-        glTranslatef(-square_size, y1(current_time), 0.0f);
+        glTranslatef(-face_size, y1(current_time), 0.0f);
         glColor3f(0.0f, 1.0f, 0.0f);
         drawSquare();
     }
@@ -115,7 +115,7 @@ void display()
 
     glPushMatrix();
     {
-        glTranslatef(square_size, y2(current_time), 0.0f);
+        glTranslatef(face_size, y2(current_time), 0.0f);
         glColor3f(1.0f, 0.0f, 0.0f);
         drawSquare();
     }
@@ -126,10 +126,10 @@ void display()
 
 int main(int argc, char** argv)
 {
-    t1 = ( v1_up + std::sqrt(v1_up * v1_up + 2.0f * g * (h - square_size/2.0f) ) )/ g;
+    t1 = ( v1_up + std::sqrt(v1_up * v1_up + 2.0f * g * (h - face_size/2.0f) ) )/ g;
     std::cout << "Time for the first object to land: " << t1 << std::endl;
 
-    float delta = ( -v2_down + std::sqrt(v2_down * v2_down + 2.0f * g * (h - square_size/2.0f) ) ) / g;
+    float delta = ( -v2_down + std::sqrt(v2_down * v2_down + 2.0f * g * (h - face_size/2.0f) ) ) / g;
     t2 = t1 - delta;
     std::cout << "Time to throw second object: " << t2 << std::endl;
 

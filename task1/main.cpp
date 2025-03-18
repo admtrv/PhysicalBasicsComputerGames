@@ -7,7 +7,7 @@
 #include <GL/glut.h>
 
 const float l_max = 150.0f;         // maximum coordinate range for projection
-const float square_size = 20.0f;    // side length of square representing car
+const float face_size = 20.0f;    // side length of square representing car
 const int time_step = 25;           // time step for glut timer
 const float dt = 0.025f;            // time increment for calculations
 float current_time = 0.0f;
@@ -30,7 +30,7 @@ void updatePosition(int value)
     x2 += v2 * dt;
 
     // check collision
-    if (x1 + (square_size/2.0f) >= x2 - (square_size/2.0f))
+    if (x1 + (face_size/2.0f) >= x2 - (face_size/2.0f))
     {
         v1 = 0.0f;
         v2 = 0.0f;
@@ -64,10 +64,10 @@ void handleResize(int width, int height)
 void drawSquare()
 {
     glBegin(GL_QUADS);
-        glVertex2f(-(square_size/2.0f), -(square_size/2.0f));
-        glVertex2f( (square_size/2.0f), -(square_size/2.0f));
-        glVertex2f( (square_size/2.0f),  (square_size/2.0f));
-        glVertex2f(-(square_size/2.0f),  (square_size/2.0f));
+        glVertex2f(-(face_size/2.0f), -(face_size/2.0f));
+        glVertex2f( (face_size/2.0f), -(face_size/2.0f));
+        glVertex2f( (face_size/2.0f),  (face_size/2.0f));
+        glVertex2f(-(face_size/2.0f),  (face_size/2.0f));
     glEnd();
 }
 
@@ -96,7 +96,7 @@ void display()
 int main(int argc, char** argv)
 {
     // print theoretically calculated collision time
-    float calculatedTime = (s_distance - square_size) / (v1 + (-v2));
+    float calculatedTime = (s_distance - face_size) / (v1 + (-v2));
     std::cout << "Calculated collision time: " << calculatedTime << std::endl;
 
     glutInit(&argc, argv);

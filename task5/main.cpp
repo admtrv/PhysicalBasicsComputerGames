@@ -10,7 +10,7 @@
 #include <GL/glut.h>
 
 const float l_max = 150.0f;
-const float square_size = 20.0f;
+const float face_size = 20.0f;
 const int time_step = 25;
 const float dt = 0.025f;
 
@@ -81,10 +81,10 @@ void handleResize(int width, int height)
 void drawSquare()
 {
     glBegin(GL_QUADS);
-        glVertex2f(-(square_size/2.0f), -(square_size/2.0f));
-        glVertex2f( (square_size/2.0f), -(square_size/2.0f));
-        glVertex2f( (square_size/2.0f),  (square_size/2.0f));
-        glVertex2f(-(square_size/2.0f),  (square_size/2.0f));
+        glVertex2f(-(face_size/2.0f), -(face_size/2.0f));
+        glVertex2f( (face_size/2.0f), -(face_size/2.0f));
+        glVertex2f( (face_size/2.0f),  (face_size/2.0f));
+        glVertex2f(-(face_size/2.0f),  (face_size/2.0f));
     glEnd();
 }
 
