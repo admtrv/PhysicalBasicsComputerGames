@@ -38,6 +38,12 @@ const float g = 9.8f;
 const float mu = 0.2f;
 
 // calculated parameters
+float F_g = 0.0f;
+float N = 0.0f;
+float F_fr = 0.0f;
+float F_net = 0.0f;
+float friction_direction = 0.0f;
+
 float F = 0.0f;
 float a = 0.0f;
 float v = 0.0f;
@@ -230,6 +236,15 @@ void drawPlane(float size_x, float size_y, float size_z)
     }
 }
 
+void drawVector(float x, float y, float z, float dx, float dy, float dz)
+{
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glBegin(GL_LINES);
+    glVertex3f(x, y, z);
+    glVertex3f(x + dx, y + dy, z + dz);
+    glEnd();
+}
+
 void drawParallelepiped(float angle, float x, float y, float z, float size_x, float size_y, float size_z)
 {
     glTranslatef(x , y , z);
@@ -242,6 +257,17 @@ void drawParallelepiped(float angle, float x, float y, float z, float size_x, fl
         glScalef(size_x, size_y, size_z);
         glutSolidCube(1.0);
     glPopMatrix();
+
+    float scale = 3.0f;
+
+    // F pull
+    drawVector(0.0f, 0.0f, 0.0f, F_pull * scale, 0.0f, 0.0f);
+
+    // F friction
+    drawVector(friction_direction * size_x / 2.0f, -size_y / 2.0f + precision, 0.0f, friction_direction * F_fr * scale, 0.0f, 0.0f);
+
+    // N
+    drawVector(0.0f, 0.0f, 0.0f, 0.0f, N * scale, 0.0f);
 }
 
 void display()
@@ -306,12 +332,23 @@ void display()
 
 int main(int argc, char** argv)
 {
-    float F_g = m * g * sin(alpha);
-    float N = m * g * cos(alpha);
-    float F_fr = mu * N;
+    F_g = m * g * sin(alpha);
+    N = m * g * cos(alpha);
+    F_fr = mu * N;
 
-    F = (F_pull - F_fr - F_g) / m;
-    a = F / m;
+    F_net = F_pull - F_g;
+
+    if (std::abs(F_net) < F_fr)
+    {
+        F = 0.0f;
+        a = 0.0f;
+    }
+    else
+    {
+        friction_direction = (F_net > 0) ? -1.0f : 1.0f;
+        F = F_net + friction_direction * F_fr;
+        a = F / m;
+    }
 
     std::cout << "Calculated resulting force F = " << F << " N" << std::endl;
     std::cout << "Calculated acceleration a = " << a << " m/s^2" << std::endl;
