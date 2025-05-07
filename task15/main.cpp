@@ -5,23 +5,32 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <vector>
+#include <string_view>
 #include <GL/gl.h>
 #include <GL/glut.h>
 
-#define INF std::numeric_limits<float>::infinity();
+// constants
+#define INF std::numeric_limits<float>::infinity()
+#define PI 3.141592653589793f
+#define EPSILON 1e-6f
 
+// simulation state
 const float dt = 0.01f;
 const int time_step = 10;
 const float l_view = 120.0f;
+int width = 800;
+int height = 600;
 
 // hud - timers
 const int HUD_MARGIN = 20;
 const int HUD_LINE = 15;
-int width = 800;
-int height = 600;
 
 // walls
-static float x_min, x_max, y_min, y_max;
+float x_min, x_max, y_min, y_max;
+
+// timers
+std::vector<struct Timer> timers;
 
 void drawCircle(float r, int seg = 40)
 {
@@ -30,7 +39,7 @@ void drawCircle(float r, int seg = 40)
 
     for (int i = 0; i <= seg; ++i)
     {
-        float a = 2.0f * M_PI * i / seg;
+        float a = 2.0f * PI * i / seg;
         glVertex2f(r * std::cos(a), r * std::sin(a));
     }
     glEnd();
@@ -41,21 +50,21 @@ void beginOverlay()
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
 
-    glLoadIdentity();
-    gluOrtho2D(0, width, 0, height);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+        glLoadIdentity();
+        gluOrtho2D(0, width, 0, height);
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
 
-    glLoadIdentity();
-    glDisable(GL_DEPTH_TEST);
+            glLoadIdentity();
+            glDisable(GL_DEPTH_TEST);
 }
 
 void endOverlay()
 {
-    glEnable(GL_DEPTH_TEST);
+            glEnable(GL_DEPTH_TEST);
 
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_PROJECTION);
 
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
@@ -64,7 +73,7 @@ void endOverlay()
 void drawString(float x, float y, const char* text)
 {
     glRasterPos2f(x, y);
-    for (const char* c = text; *c; ++c)
+    for (const char* c = text; *c; c++)
     {
         glutBitmapCharacter(GLUT_BITMAP_8_BY_13, *c);
     }
@@ -115,9 +124,9 @@ public:
     Vec2  p;            // position
     Vec2  v;            // velocity
     float cr, cg, cb;   // color
+    static std::vector<Ball> balls;
 
-    Ball(float radius, float mass, const Vec2& pos, const Vec2& vel,
-         float red, float green, float blue)
+    Ball(float radius, float mass, const Vec2& pos, const Vec2& vel, float red, float green, float blue)
         : r(radius), m(mass), p(pos), v(vel), cr(red), cg(green), cb(blue) {}
 
     void update(float dt)
@@ -125,7 +134,7 @@ public:
         p += v * dt;
     }
 
-    void collisionWall()
+    void collisionWalls()
     {
         if (p.x - r < x_min)
         {
@@ -150,7 +159,7 @@ public:
         }
     }
 
-    float timeToWall() const
+    float timeToWalls() const
     {
         float tx = INF;
         float ty = INF;
@@ -178,92 +187,117 @@ public:
         glPopMatrix();
     }
 
-    static float timeToBall(const Ball& A, const Ball& B)
+    float timeToBalls() const
     {
-        Vec2 dp = A.p - B.p;
-        Vec2 dv = A.v - B.v;
+        float t_min = std::numeric_limits<float>::infinity();
 
-        float a = Vec2::dot(dv, dv);
-        float b = 2.0f * Vec2::dot(dp, dv);
-        float c = Vec2::dot(dp, dp) - (A.r + B.r) * (A.r + B.r);
+        for (const Ball& B : balls)
+        {
+            if (&B == this)
+                continue;
 
-        float disc = b*b - 4.0f*a*c;
-        if (disc < 0.0f)
-            return std::numeric_limits<float>::infinity();
+            Vec2 dp = p - B.p;
+            Vec2 dv = v - B.v;
 
-        float t = (-b - std::sqrt(disc)) / (2.0f*a);
-        return (t > 0.0f) ? t : std::numeric_limits<float>::infinity();
+            float a = Vec2::dot(dv, dv);
+            if (a < EPSILON)
+            {
+                continue;
+            }
+
+            float b = 2.0f * Vec2::dot(dp, dv);
+            float c = Vec2::dot(dp, dp) - (r + B.r) * (r + B.r);
+
+            float disc = b*b - 4.0f*a*c;
+            if (disc < 0.0f)
+            {
+                continue;
+            }
+
+            float t = (-b - std::sqrt(disc)) / (2.0f*a);
+            if (t > 0.0f && t < t_min)
+            {
+                t_min = t;
+            }
+        }
+
+        return t_min;
     }
 
-    static void collision(Ball& A, Ball& B)
+    void collisionBalls()
     {
-        Vec2 r12 = A.p - B.p;
-        float dist = Vec2::dot(r12, r12);
-        float min_d2 = (A.r + B.r) * (A.r + B.r);
+        for (Ball& B : balls)
+        {
+            if (this == &B)
+                continue;
 
-        if (dist > min_d2)  // no collision
-            return;
+            Vec2 r12 = p - B.p;
+            float dist = Vec2::dot(r12, r12);
+            float min = (r + B.r) * (r + B.r);
 
-        Vec2 p12{ A.m * A.v.x - B.m * B.v.x, A.m * A.v.y - B.m * B.v.y };
-        float S = r12.x * p12.x + r12.y * p12.y;
-        float Ix = -r12.x / dist * S;
-        float Iy = -r12.y / dist * S;
+            if (dist > min)  // no collision
+                continue;
 
-        A.v.x += Ix / A.m;
-        A.v.y += Iy / A.m;
-        B.v.x -= Ix / B.m;
-        B.v.y -= Iy / B.m;
+            Vec2 p12{ m * v.x - B.m * B.v.x, m * v.y - B.m * B.v.y };
+            float S = r12.x * p12.x + r12.y * p12.y;
+            float Ix = -r12.x / dist * S;
+            float Iy = -r12.y / dist * S;
+
+            v.x += Ix / m;
+            v.y += Iy / m;
+            B.v.x -= Ix / B.m;
+            B.v.y -= Iy / B.m;
+        }
     }
 };
 
+// balls
+std::vector<Ball> Ball::balls;
+
 struct Timer {
     const Ball* self;
-    const Ball* other;
-    const char* label;
+    std::string_view label;
     int order;
 
     float value() const
     {
-        float t_wall = self->timeToWall();
-        float t_bb = Ball::timeToBall(*self, *other);
+        float t_wall = self->timeToWalls();
+        float t_bb = self->timeToBalls();
+
         return std::fmin(t_wall, t_bb);
     }
 
     void draw() const
     {
         char buf[32];
-        std::snprintf(buf, sizeof(buf), "%s: %.2f s", label, value());
+        std::snprintf(buf, sizeof(buf), "%.*s: %.2f s", static_cast<int>(label.size()), label.data(), value());
 
         float x = HUD_MARGIN;
         float y = height - HUD_MARGIN - order * HUD_LINE;
 
         glRasterPos2f(x, y);
+        glColor3f(1, 1, 1);
 
-        for (const char* c = buf; *c; ++c)
+        for (const char* c = buf; *c; c++)
         {
             glutBitmapCharacter(GLUT_BITMAP_8_BY_13, *c);
         }
     }
 };
 
-// balls
-static Ball ball1{ 10.0, 1.0, { 45.0f, -50.0f}, {-15.0f,  18.0f}, 1.0f, 0.0f, 0.0f };
-static Ball ball2{ 10.0, 1.0, {-45.0f,  55.0f}, { 17.0f, -16.0f}, 0.0f, 0.0f, 1.0f };
-
-// timers
-Timer timer1{ &ball1, &ball2, "Red", 0 };
-Timer timer2{ &ball2, &ball1, "Blue", 1 };
-
 void update(int)
 {
-    // update coordinates
-    ball1.update(dt);
-    ball2.update(dt);
+    for (Ball& b : Ball::balls)
+    {
+        // update coordinates
+        b.update(dt);
 
-    // check for collision
-    Ball::collision(ball1, ball2);
-    ball1.collisionWall();
-    ball2.collisionWall();
+        // collisions ball–ball
+        b.collisionBalls();
+
+        // collisions ball–wall
+        b.collisionWalls();
+    }
 
     glutPostRedisplay();
     glutTimerFunc(time_step, update, 0);
@@ -271,8 +305,15 @@ void update(int)
 
 void handleResize(int w, int h)
 {
-    if (w == 0) w = 1;
-    if (h == 0) h = 1;
+    if (w == 0)
+    {
+        w = 1;
+    }
+
+    if (h == 0)
+    {
+        h = 1;
+    }
 
     width = w;
     height = h;
@@ -284,13 +325,16 @@ void handleResize(int w, int h)
 
     float aspect = static_cast<float>(w) / h;
 
-    if (aspect >= 1.0f) {
+    if (aspect >= 1.0f)
+    {
         gluOrtho2D(-l_view * aspect, l_view * aspect, -l_view, l_view);
         x_min = -l_view * aspect;
         x_max =  l_view * aspect;
         y_min = -l_view;
         y_max =  l_view;
-    } else {
+    }
+    else
+    {
         gluOrtho2D(-l_view, l_view, -l_view / aspect, l_view / aspect);
         x_min = -l_view;
         x_max =  l_view;
@@ -307,14 +351,17 @@ void display()
     glClear(GL_COLOR_BUFFER_BIT);
 
     // balls
-    ball1.draw();
-    ball2.draw();
+    for (const Ball& b : Ball::balls)
+    {
+        b.draw();
+    }
 
     // timers
     beginOverlay();
-        glColor3f(1,1,1);
-        timer1.draw();
-        timer2.draw();
+        for (const Timer& t : timers)
+        {
+            t.draw();
+        }
     endOverlay();
 
     glutSwapBuffers();
@@ -327,8 +374,16 @@ int main(int argc, char** argv)
     glutInitWindowSize(width, height);
     glutInitWindowPosition(100, 100);
 
-    glutCreateWindow("Two-Ball Collision");
+    glutCreateWindow("Balls Collision");
     glClearColor(0.0, 0.0, 0.0, 1.0);
+
+    // balls
+    Ball::balls.emplace_back(10.f, 1.f, Vec2{ 45.f,-50.f}, Vec2{-15.f, 18.f}, 1.f,0.f,0.f);
+    Ball::balls.emplace_back(10.f, 1.f, Vec2{-45.f, 55.f}, Vec2{ 17.f,-16.f}, 0.f,0.f,1.f);
+
+    // timers
+    timers.push_back({ &Ball::balls[0], "Red",  0 });
+    timers.push_back({ &Ball::balls[1], "Blue", 1 });
 
     glutDisplayFunc(display);
     glutReshapeFunc(handleResize);
