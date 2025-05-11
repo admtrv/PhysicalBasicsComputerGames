@@ -1,0 +1,1 @@
+A parachutist falls from an initial height z0 with known parameters as before, but now the air density decreases with altitude. Simulate the motion under gravity and altitude-dependent air resistance using two integration methods: Euler and Midpoint.

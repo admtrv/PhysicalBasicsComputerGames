@@ -1,0 +1,1 @@
+Two balls of equal radius and mass move inside a rectangular box and bounce off the walls and each other. The simulation tracks their motion step by step, handling elastic collisions with the walls and between the balls. At each frame, the estimated time until the next collision is calculated and displayed for both balls.

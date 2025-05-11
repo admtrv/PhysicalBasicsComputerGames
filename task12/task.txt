@@ -1,0 +1,1 @@
+A parachutist starts falling from an initial height h with known mass m, drag coefficient C, cross-sectional area S, and air density rho. Simulate the vertical motion under gravity and air resistance.

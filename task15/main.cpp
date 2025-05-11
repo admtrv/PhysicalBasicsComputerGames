@@ -378,8 +378,8 @@ int main(int argc, char** argv)
     glClearColor(0.0, 0.0, 0.0, 1.0);
 
     // balls
-    Ball::balls.emplace_back(10.f, 1.f, Vec2{ 45.f,-50.f}, Vec2{-15.f, 18.f}, 1.f,0.f,0.f);
-    Ball::balls.emplace_back(10.f, 1.f, Vec2{-45.f, 55.f}, Vec2{ 17.f,-16.f}, 0.f,0.f,1.f);
+    Ball::balls.emplace_back(10.f, 1.f, Vec2{ 45.f,-50.f}, Vec2{-50.f, 50.f}, 1.f,0.f,0.f);
+    Ball::balls.emplace_back(10.f, 1.f, Vec2{-45.f, 55.f}, Vec2{ 45.f,-45.f}, 0.f,0.f,1.f);
 
     // timers
     timers.push_back({ &Ball::balls[0], "Red",  0 });

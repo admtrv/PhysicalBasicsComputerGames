@@ -1,0 +1,1 @@
+A cannon at the bottom can move left and right and fires projectiles straight upward. The projectiles have 3 different masses, and the falling boxes also have 3 different masses. The goal is to push all boxes to the target zone at the top by transferring momentum. If any box touches the bottom, the game is lost.
